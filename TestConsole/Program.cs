@@ -14,7 +14,7 @@ namespace TestConsole {
 
       var builder = new ConfigurationBuilder()
                  .SetBasePath(Directory.GetCurrentDirectory())
-                 .AddJsonFile("appsettings.json");
+                 .AddJsonFile("appSettings.json");
 
       var configuration = builder.Build();
 
