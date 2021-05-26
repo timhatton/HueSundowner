@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "TestConsole": {
-      "commandName": "Project",
-      "commandLineArgs": "sunset"
-    }
-  }
-}
