@@ -26,35 +26,35 @@ namespace TestConsole {
       //var job = new SundownerJob(hue, sunsetService, new Clock(), schedule);
       //await job.Execute(null);      
 
-      StdSchedulerFactory factory = new StdSchedulerFactory();
-      IScheduler scheduler = await factory.GetScheduler();
-      IJobDetail job = JobBuilder.Create<SundownerJob>()
-        .WithIdentity("SundownerJob")
-        .UsingJobData("Location.Longitude", location.Longitude)
-        .UsingJobData("Location.Latitude", location.Latitude)
-        .UsingJobData("HueSettings.AppKey", hueSettings.AppKey)
-        .UsingJobData("HueSettings.IpAddress", hueSettings.IpAddress)
-        .UsingJobData("HueSchedule.DayOfWeekFilter", schedule.DayOfWeekFilter)
-        .UsingJobData("HueSchedule.SunsetOffsetOff_m", schedule.SunsetOffsetOff_m)
-        .UsingJobData("HueSchedule.SunsetOffsetOn_m", schedule.SunsetOffsetOn_m)
-        .Build();
+      //StdSchedulerFactory factory = new StdSchedulerFactory();
+      //IScheduler scheduler = await factory.GetScheduler();
+      //IJobDetail job = JobBuilder.Create<SundownerJob>()
+      //  .WithIdentity("SundownerJob")
+      //  .UsingJobData("Location.Longitude", location.Longitude)
+      //  .UsingJobData("Location.Latitude", location.Latitude)
+      //  .UsingJobData("HueSettings.AppKey", hueSettings.AppKey)
+      //  .UsingJobData("HueSettings.IpAddress", hueSettings.IpAddress)
+      //  .UsingJobData("HueSchedule.DayOfWeekFilter", schedule.DayOfWeekFilter)
+      //  .UsingJobData("HueSchedule.SunsetOffsetOff_m", schedule.SunsetOffsetOff_m)
+      //  .UsingJobData("HueSchedule.SunsetOffsetOn_m", schedule.SunsetOffsetOn_m)
+      //  .Build();
    
 
-      ITrigger trigger = TriggerBuilder.Create()
-        .WithIdentity("SimpleTrigger")
-        .StartNow()
-        .WithSimpleSchedule(x => x
-            .WithIntervalInMinutes(schedule.CheckFrequency_m)
-            .RepeatForever())
-        .Build();
+      //ITrigger trigger = TriggerBuilder.Create()
+      //  .WithIdentity("SimpleTrigger")
+      //  .StartNow()
+      //  .WithSimpleSchedule(x => x
+      //      .WithIntervalInMinutes(schedule.CheckFrequency_m)
+      //      .RepeatForever())
+      //  .Build();
 
-      await scheduler.ScheduleJob(job, trigger);
-      await scheduler.Start();
+      //await scheduler.ScheduleJob(job, trigger);
+      //await scheduler.Start();
 
-      Console.ReadLine();
+      //Console.ReadLine();
 
-      await scheduler.Shutdown();
-      Log.CloseAndFlush();
+      //await scheduler.Shutdown();
+      //Log.CloseAndFlush();
     }    
   }
 }

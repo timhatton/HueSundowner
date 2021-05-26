@@ -1,34 +1,21 @@
-﻿using Quartz;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace HueSundowner.Lib {
-  [DisallowConcurrentExecution]
-  public class SundownerJob: IJob {
-    //public SundownerJob(IHueController hue, ISunsetWebService sunsetWebService, IClock clock, HueSchedule schedule) {
-    //  this.hue = hue;
-    //  this.sunsetWebService = sunsetWebService;
-    //  this.clock = clock;
-    //  this.schedule = schedule;
-    //}
-    public SundownerJob() {
-      clock = new Clock();
+  public class SundownerJob { //: IJob {
+    public SundownerJob(HueSettings hueSettings,  
+                        Location location,
+                        HueSchedule schedule) {
+      this.hueSettings = hueSettings;
+      this.location = location;
+      this.clock = new Clock(); 
+      this.schedule = schedule;
     }
-    public async Task Execute(IJobExecutionContext context) {
-      JobDataMap dataMap = context.JobDetail.JobDataMap;
 
-      var longitude = dataMap.GetFloat("Location.Longitude");
-      var latitude = dataMap.GetFloat("Location.Latitude");
-      var hueIpAddress = dataMap.GetString("HueSettings.IpAddress");
-      var hueAppKey = dataMap.GetString("HueSettings.AppKey");
-      var dayOfWeeFilter = dataMap.GetString("HueSchedule.DayOfWeekFilter");
-      var sunsetOffsetOn_m = dataMap.GetInt("HueSchedule.SunsetOffsetOn_m");
-      var sunsetOffsetOff_m = dataMap.GetInt("HueSchedule.SunsetOffsetOff_m");
-      var hue = new HueController(hueIpAddress, hueAppKey);
-      ISunsetWebService sunsetWebService = new SunsetWebService(latitude, longitude);
+    public async Task Execute(HttpClient httpClient) {
+      var sunsetWebService = new SunsetWebService(httpClient, location.Latitude, location.Longitude);
+      var hue = new HueController(hueSettings.IpAddress, hueSettings.AppKey);
       var now = clock.GetNow();
       if(!(sunsetToday.HasValue && sunsetToday.Value.Date == now.Date)) {
         sunsetToday = await sunsetWebService.GetSundownTime(now);
@@ -38,10 +25,10 @@ namespace HueSundowner.Lib {
         if(!(sunsetYesterday.HasValue && sunsetYesterday.Value.Date == now.Date.AddDays(1))) { 
           sunsetYesterday = await sunsetWebService.GetSundownTime(now.Date.AddDays(1));
         }
-        await Control(hue, now, sunsetYesterday.Value, dayOfWeeFilter, sunsetOffsetOn_m, sunsetOffsetOff_m);
+        await Control(hue, now, sunsetYesterday.Value, schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, schedule.SunsetOffsetOff_m);
       }
       else {
-        await Control(hue, now, sunsetToday.Value, dayOfWeeFilter, sunsetOffsetOn_m, sunsetOffsetOff_m);
+        await Control(hue, now, sunsetToday.Value, schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, schedule.SunsetOffsetOff_m);
       }
     }
 
@@ -58,7 +45,6 @@ namespace HueSundowner.Lib {
       }
     }
 
-
     public static bool IsDayAllowed(string dayOfWeekFilter, DateTime date) {
       if(string.IsNullOrEmpty(dayOfWeekFilter) || dayOfWeekFilter.Length != 7)
         return false;
@@ -74,7 +60,10 @@ namespace HueSundowner.Lib {
       }
       return false;
     }
-    IClock clock;    
+    IClock clock;
+    HueSchedule schedule;
+    HueSettings hueSettings;
+    Location location;
     static DateTime? sunsetYesterday;
     static DateTime? sunsetToday;
   }
