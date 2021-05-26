@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace HueSundowner.Lib {
-  public class HueController {
+  public class HueController: IHueController {
     public HueController(string ipAddress, string appKey) {
       this.ipAddress = ipAddress;
       this.appKey = appKey;
@@ -18,7 +18,7 @@ namespace HueSundowner.Lib {
         LocalHueClient client = new LocalHueClient(ipAddress);
         client.Initialize(appKey);
         var command = new LightCommand();
-        command.On = true;        
+        command.On = true;
 
         await client.SendCommandAsync(command);
       }

@@ -2,7 +2,7 @@
   "profiles": {
     "TestConsole": {
       "commandName": "Project",
-      "commandLineArgs": "on"
+      "commandLineArgs": "sunset"
     }
   }
 }

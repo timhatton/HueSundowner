@@ -1,34 +1,60 @@
 ﻿using HueSundowner.Lib;
 using Microsoft.Extensions.Configuration;
+using Quartz;
+using Quartz.Impl;
+using Serilog;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace TestConsole {
   class Program {
-    static async Task Main(string[] args) {    
-      if(args.Length != 1 || (args[0].ToLower() != "on" && args[0].ToLower() != "off")) {
-        Console.WriteLine("test [on | off]");
-        Environment.Exit(1);
-      }
-
+    static async Task Main(string[] args) {
+      Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console()
+        .CreateLogger();
       var builder = new ConfigurationBuilder()
                  .SetBasePath(Directory.GetCurrentDirectory())
                  .AddJsonFile("appSettings.json");
-
       var configuration = builder.Build();
+      var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
+      var location = configuration.GetSection("Location").Get<Location>();
+      var schedule = configuration.GetSection("HueSchedule").Get<HueSchedule>();
+      //var hue = new HueController(hueSettings);
+      //var sunsetService = new SunsetWebService(location);
+      //var job = new SundownerJob(hue, sunsetService, new Clock(), schedule);
+      //await job.Execute(null);      
 
-      var settings = configuration.GetSection("HueSettings").Get<HueSettings>();
+      StdSchedulerFactory factory = new StdSchedulerFactory();
+      IScheduler scheduler = await factory.GetScheduler();
+      IJobDetail job = JobBuilder.Create<SundownerJob>()
+        .WithIdentity("SundownerJob")
+        .UsingJobData("Location.Longitude", location.Longitude)
+        .UsingJobData("Location.Latitude", location.Latitude)
+        .UsingJobData("HueSettings.AppKey", hueSettings.AppKey)
+        .UsingJobData("HueSettings.IpAddress", hueSettings.IpAddress)
+        .UsingJobData("HueSchedule.DayOfWeekFilter", schedule.DayOfWeekFilter)
+        .UsingJobData("HueSchedule.SunsetOffsetOff_m", schedule.SunsetOffsetOff_m)
+        .UsingJobData("HueSchedule.SunsetOffsetOn_m", schedule.SunsetOffsetOn_m)
+        .Build();
+   
 
-      Console.WriteLine($"Hue bridge at {settings.IpAddress}");
-      var controller = new HueController(settings.IpAddress, settings.AppKey);
+      ITrigger trigger = TriggerBuilder.Create()
+        .WithIdentity("SimpleTrigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x
+            .WithIntervalInMinutes(schedule.CheckFrequency_m)
+            .RepeatForever())
+        .Build();
 
-      if(args[0].ToLower() == "on") {
-        await controller.On();
-      }
-      else if(args[0].ToLower() == "off") {
-        await controller.Off();
-      }
-    }
+      await scheduler.ScheduleJob(job, trigger);
+      await scheduler.Start();
+
+      Console.ReadLine();
+
+      await scheduler.Shutdown();
+      Log.CloseAndFlush();
+    }    
   }
 }
