@@ -12,7 +12,7 @@ namespace HueSundownDaemon {
       try {
         var builder = new ConfigurationBuilder()
          .SetBasePath(Directory.GetCurrentDirectory())
-         .AddJsonFile("appSettings.json");
+         .AddJsonFile("appsettings.json");
         var configuration = builder.Build();
         var serilogSettings = configuration.GetSection("SerilogSettings").Get<SerilogSettings>();
 
