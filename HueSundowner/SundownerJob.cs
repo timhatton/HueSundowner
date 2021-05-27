@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -16,27 +17,52 @@ namespace HueSundowner.Lib {
     public async Task Execute(HttpClient httpClient) {
       var sunsetWebService = new SunsetWebService(httpClient, location.Latitude, location.Longitude);
       var hue = new HueController(hueSettings.IpAddress, hueSettings.AppKey);
-      var now = clock.GetNow();
-      if(!(sunsetToday.HasValue && sunsetToday.Value.Date == now.Date)) {
-        sunsetToday = await sunsetWebService.GetSundownTime(now);
+      var nowUtc = clock.GetNow();
+      
+      if(!(sunsetTodayLocal.HasValue && sunsetTodayLocal.Value.Date == nowUtc.Date)) {
+        sunsetTodayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc);
       }
-      if(now.IsAm()) {
+      var offtime = GetOfftime(nowUtc.ToLocalTime(), schedule);
+      if(nowUtc.ToLocalTime().IsAm()) {
         // If it is AM use the previous day's sunset time
-        if(!(sunsetYesterday.HasValue && sunsetYesterday.Value.Date == now.Date.AddDays(1))) { 
-          sunsetYesterday = await sunsetWebService.GetSundownTime(now.Date.AddDays(1));
-        }
-        await Control(hue, now, sunsetYesterday.Value, schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, schedule.SunsetOffsetOff_m);
+        if(!(sunsetYesterdayLocal.HasValue && sunsetYesterdayLocal.Value.Date == nowUtc.Date.AddDays(1))) { 
+          sunsetYesterdayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc.Date.AddDays(1));
+        }        
+        await Control(hue, nowUtc.ToLocalTime(), sunsetYesterdayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
       }
       else {
-        await Control(hue, now, sunsetToday.Value, schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, schedule.SunsetOffsetOff_m);
+        await Control(hue, nowUtc.ToLocalTime(), sunsetTodayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
       }
     }
 
+    private DateTime GetOfftime(DateTime now, HueSchedule schedule) {
+      var dayOfWeek = now.DayOfWeek.ToString();
+      TimeOfDay todOff;
+      if(schedule.TimeOfDayOff.Any(x => string.Compare(x.DayOfWeek, dayOfWeek, true) == 0)) {
+        todOff = new TimeOfDay(schedule.TimeOfDayOff.First(x => string.Compare(x.DayOfWeek, dayOfWeek, true) == 0).TimeOfDay);
+      }
+      else if(schedule.TimeOfDayOff.Any(x => string.Compare(x.DayOfWeek, "Default", true) == 0)) {
+        todOff = new TimeOfDay(schedule.TimeOfDayOff.First(x => string.Compare(x.DayOfWeek, "Default", true) == 0).TimeOfDay);
+      }
+      else {
+        todOff =  new TimeOfDay(now.Date.AddDays(1)); // Midnight by default
+      }
+     
+      if(todOff.Hour < 12) {
+        // assume tomorrow
+        return now.Date.AddDays(1).AddHours(todOff.Hour).AddMinutes(todOff.Minute);
+      }
+      else {
+        // assume today
+        return now.Date.AddHours(todOff.Hour).AddMinutes(todOff.Minute);
+      }
+    }
+    // Operates on local time
     private async Task Control(IHueController hue, DateTime now, DateTime sunset, 
-      string dayOfWeeFilter, int sunsetOffsetOn_m, int sunsetOffsetOff_m) {
+      string dayOfWeeFilter, int sunsetOffsetOn_m, DateTime offtime) {
       var turnOn =  IsDayAllowed(dayOfWeeFilter, now) &&
                            now >= sunset.AddMinutes(sunsetOffsetOn_m) &&
-                           now < sunset.AddMinutes(sunsetOffsetOff_m);
+                           now < offtime;
       if(turnOn) {
         await hue.On();
       }
@@ -64,7 +90,7 @@ namespace HueSundowner.Lib {
     HueSchedule schedule;
     HueSettings hueSettings;
     Location location;
-    static DateTime? sunsetYesterday;
-    static DateTime? sunsetToday;
+    static DateTime? sunsetYesterdayLocal;
+    static DateTime? sunsetTodayLocal;
   }
 }

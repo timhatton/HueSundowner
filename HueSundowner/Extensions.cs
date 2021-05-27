@@ -13,5 +13,6 @@ namespace HueSundowner.Lib {
     public static string ToIso8601(this DateTime dateTime) {
       return dateTime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
     }
+    
   }
 }

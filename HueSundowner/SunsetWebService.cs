@@ -15,13 +15,13 @@ namespace HueSundowner.Lib {
       this.longitude = longitude;
 
     }
-    public async Task<DateTime> GetSundownTime(DateTime date) {
+    public async Task<DateTime> GetSundownTimeAsLocal(DateTime date) {
      
         using(var response = await httpClient.GetAsync(string.Format(ServiceUrlFormat, latitude, longitude, date.ToIso8601()))) {
           string apiResponse = await response.Content.ReadAsStringAsync();
           var ssResponse = JsonConvert.DeserializeObject<SunriseSunsetResponse>(apiResponse);
 
-          return ssResponse.Results.Sunset.ToUniversalTime();
+          return ssResponse.Results.Sunset;
         }     
     }
     
