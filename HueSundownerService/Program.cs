@@ -10,8 +10,10 @@ namespace HueSundownerService {
     public static void Main(string[] args) {
 
       try {
+        Console.WriteLine(AppContext.BaseDirectory);
         var builder = new ConfigurationBuilder()
-         .SetBasePath(Directory.GetCurrentDirectory())
+         //  .SetBasePath(Directory.GetCurrentDirectory())
+         .SetBasePath(AppContext.BaseDirectory)
          .AddJsonFile("appSettings.json");
         var configuration = builder.Build();
         var serilogSettings = configuration.GetSection("SerilogSettings").Get<SerilogSettings>();
