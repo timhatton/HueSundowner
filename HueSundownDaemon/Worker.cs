@@ -29,7 +29,7 @@ namespace HueSundownDaemon {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
       var builder = new ConfigurationBuilder()
            .SetBasePath(Directory.GetCurrentDirectory())
-           .AddJsonFile("appSettings.json");
+           .AddJsonFile("appsettings.json");
       var configuration = builder.Build();
       var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
       var location = configuration.GetSection("Location").Get<Location>();
