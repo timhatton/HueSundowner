@@ -28,7 +28,7 @@ namespace HueSundownDaemon {
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
       var builder = new ConfigurationBuilder()
-           .SetBasePath(Directory.GetCurrentDirectory())
+            .SetBasePath(AppContext.BaseDirectory)
            .AddJsonFile("appsettings.json");
       var configuration = builder.Build();
       var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
