@@ -14,7 +14,7 @@ namespace HueSundownDaemon {
   public class Worker: BackgroundService {
 
     public Worker(ILogger<Worker> logger, IConfiguration configuration) {
-      _logger = logger;
+      this.configuration = configuration;
     }
     public override Task StartAsync(CancellationToken cancellationToken) {
       httpClient = new HttpClient();
@@ -34,7 +34,6 @@ namespace HueSundownDaemon {
         await Task.Delay(schedule.CheckFrequency_m * 60000, stoppingToken);
       }
     }
-    private readonly ILogger<Worker> _logger;
     private HttpClient httpClient;
     IConfiguration configuration;
   }
