@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -15,23 +16,28 @@ namespace HueSundowner.Lib {
     }
 
     public async Task Execute(HttpClient httpClient) {
-      var sunsetWebService = new SunsetWebService(httpClient, location.Latitude, location.Longitude);
-      var hue = new HueController(hueSettings.IpAddress, hueSettings.AppKey);
-      var nowUtc = clock.GetNow();
-      
-      if(!(sunsetTodayLocal.HasValue && sunsetTodayLocal.Value.Date == nowUtc.Date)) {
-        sunsetTodayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc);
+      try {
+        var sunsetWebService = new SunsetWebService(httpClient, location.Latitude, location.Longitude);
+        var hue = new HueController(hueSettings.IpAddress, hueSettings.AppKey);
+        var nowUtc = clock.GetNow();
+
+        if(!(sunsetTodayLocal.HasValue && sunsetTodayLocal.Value.Date == nowUtc.Date)) {
+          sunsetTodayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc);
+        }
+        var offtime = GetOfftime(nowUtc.ToLocalTime(), schedule);
+        if(nowUtc.ToLocalTime().IsAm()) {
+          // If it is AM use the previous day's sunset time
+          if(!(sunsetYesterdayLocal.HasValue && sunsetYesterdayLocal.Value.Date == nowUtc.Date.AddDays(1))) {
+            sunsetYesterdayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc.Date.AddDays(1));
+          }
+          await Control(hue, nowUtc.ToLocalTime(), sunsetYesterdayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
+        }
+        else {
+          await Control(hue, nowUtc.ToLocalTime(), sunsetTodayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
+        }
       }
-      var offtime = GetOfftime(nowUtc.ToLocalTime(), schedule);
-      if(nowUtc.ToLocalTime().IsAm()) {
-        // If it is AM use the previous day's sunset time
-        if(!(sunsetYesterdayLocal.HasValue && sunsetYesterdayLocal.Value.Date == nowUtc.Date.AddDays(1))) { 
-          sunsetYesterdayLocal = await sunsetWebService.GetSundownTimeAsLocal(nowUtc.Date.AddDays(1));
-        }        
-        await Control(hue, nowUtc.ToLocalTime(), sunsetYesterdayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
-      }
-      else {
-        await Control(hue, nowUtc.ToLocalTime(), sunsetTodayLocal.Value.ToLocalTime(), schedule.DayOfWeekFilter, schedule.SunsetOffsetOn_m, offtime);
+      catch(Exception ex) {
+        logger.Error(ex, "Error executing SundownerJob");
       }
     }
 
@@ -92,5 +98,6 @@ namespace HueSundowner.Lib {
     Location location;
     static DateTime? sunsetYesterdayLocal;
     static DateTime? sunsetTodayLocal;
+    private static readonly ILogger logger = Log.Logger.ForContext<SundownerJob>();
   }
 }

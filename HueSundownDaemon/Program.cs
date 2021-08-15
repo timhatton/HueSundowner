@@ -43,6 +43,7 @@ namespace HueSundownDaemon {
       return Host.CreateDefaultBuilder(args)
           .UseSystemd()
           .ConfigureServices((hostContext, services) => {
+
             services.AddHostedService<Worker>();
           })
           .UseSerilog();
