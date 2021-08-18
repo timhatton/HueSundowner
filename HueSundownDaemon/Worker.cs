@@ -16,6 +16,7 @@ namespace HueSundownDaemon {
 
     public Worker(ILogger<Worker> logger, IConfiguration configuration) {
       this.configuration = configuration;
+    
     }
     public override Task StartAsync(CancellationToken cancellationToken) {
       httpClient = new HttpClient();
@@ -26,6 +27,7 @@ namespace HueSundownDaemon {
       return base.StopAsync(cancellationToken);
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+      
       var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
       logger.Debug("hueSettings: {@Settings}", hueSettings);
       var location = configuration.GetSection("Location").Get<Location>();

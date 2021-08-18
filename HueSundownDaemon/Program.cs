@@ -32,7 +32,7 @@ namespace HueSundownDaemon {
         Log.Debug("Serilog settings: {@SerilogSettings}", serilogSettings);
         var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
         Log.Debug("hueSettings: {@Settings}", hueSettings);
-        CreateHostBuilder(args).Build().Run();
+        CreateHostBuilder(args, configuration).Build().Run();
         return;
       }
       catch(Exception ex) {
@@ -43,11 +43,11 @@ namespace HueSundownDaemon {
       }
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args) {
+    public static IHostBuilder CreateHostBuilder(string[] args, IConfiguration configuration) {
       return Host.CreateDefaultBuilder(args)
           .UseSystemd()
           .ConfigureServices((hostContext, services) => {
-
+            services.AddSingleton<IConfiguration>(configuration);
             services.AddHostedService<Worker>();
           })
           .UseSerilog();
