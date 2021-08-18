@@ -16,7 +16,7 @@ namespace HueSundownDaemon {
          .AddJsonFile("appsettings.json");
         var configuration = builder.Build();
         var serilogSettings = configuration.GetSection("SerilogSettings").Get<SerilogSettings>();
-
+        
         Log.Logger = new LoggerConfiguration()
                         .MinimumLevel.Debug()
                         .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
@@ -28,6 +28,7 @@ namespace HueSundownDaemon {
                         .CreateLogger();
 
         Log.Information("Starting service");
+        Log.Debug("Serilog settings: {@SerilogSettings}", serilogSettings);
         CreateHostBuilder(args).Build().Run();
         return;
       }
