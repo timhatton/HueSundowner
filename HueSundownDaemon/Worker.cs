@@ -2,6 +2,7 @@ using HueSundowner.Lib;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,8 +27,11 @@ namespace HueSundownDaemon {
     }
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
       var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
+      logger.Debug("hueSettings: {@Settings}", hueSettings);
       var location = configuration.GetSection("Location").Get<Location>();
+      logger.Debug("location: {@Location}", location);
       var schedule = configuration.GetSection("HueSchedule").Get<HueSchedule>();
+      logger.Debug("schedule: {@Schedule}", schedule);
       var sundownerJob = new SundownerJob(hueSettings, location, schedule);
       while(!stoppingToken.IsCancellationRequested) {
         await sundownerJob.Execute(httpClient);
@@ -36,5 +40,6 @@ namespace HueSundownDaemon {
     }
     private HttpClient httpClient;
     IConfiguration configuration;
+    private static readonly Serilog.ILogger logger = Log.Logger.ForContext<Worker>();
   }
 }
