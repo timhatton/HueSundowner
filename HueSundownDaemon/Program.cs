@@ -5,6 +5,7 @@ using Serilog;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using HueSundownerService;
+using HueSundowner.Lib;
 
 namespace HueSundownDaemon {
   public class Program {
@@ -29,6 +30,8 @@ namespace HueSundownDaemon {
 
         Log.Information("Starting service");
         Log.Debug("Serilog settings: {@SerilogSettings}", serilogSettings);
+        var hueSettings = configuration.GetSection("HueSettings").Get<HueSettings>();
+        Log.Debug("hueSettings: {@Settings}", hueSettings);
         CreateHostBuilder(args).Build().Run();
         return;
       }
